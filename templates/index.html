@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fish Classifier</title>
+</head>
+<body>
+    <h2>🐟 Fish Species Classifier</h2>
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/*" required>
+        <button type="submit">Predict</button>
+    </form>
+
+    {% if prediction %}
+        <h3>Prediction: {{ prediction }}</h3>
+        <!-- <h4>Confidence: {{ confidence | round(2) }}</h4> -->
+        <img src="data:image/png;base64,{{ img_data }}" alt="Uploaded Image" width="300">
+    {% endif %}
+</body>
+</html>
