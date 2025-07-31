@@ -5,11 +5,22 @@ import numpy as np
 from PIL import Image
 import io
 import base64
+import tensorflow as tf
+import numpy as np
+from PIL import Image
+import io
+
 
 app = Flask(__name__)
 
 # Load the trained model once
-model = load_model('best_model.h5')
+# model = load_model('best_model.h5')
+# Set up the TFLite interpreter once (globally)
+interpreter = tf.lite.Interpreter(model_path="model.tflite")
+interpreter.allocate_tensors()
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
+
 
 # Replace with your real class names
 class_names = sorted([
@@ -23,21 +34,28 @@ class_names = sorted([
 
 # Predict from in-memory image
 def predict_image(file):
+    # Load and preprocess the image
     img = Image.open(file).convert('RGB')
     img = img.resize((224, 224))
-    img_array = image.img_to_array(img) / 255.0
+    img_array = np.array(img, dtype=np.float32) / 255.0
     img_array = np.expand_dims(img_array, axis=0)
 
-    preds = model.predict(img_array, verbose=0)
-    predicted_class = class_names[np.argmax(preds)]
-    confidence = np.max(preds)
+    # Set input tensor and run inference
+    interpreter.set_tensor(input_details[0]['index'], img_array)
+    interpreter.invoke()
+    preds = interpreter.get_tensor(output_details[0]['index'])
 
-    # Convert image to base64 for HTML rendering
+    predicted_class = class_names[np.argmax(preds)]
+    confidence = float(np.max(preds))
+
+    # Encode image to base64
     buffered = io.BytesIO()
     img.save(buffered, format="PNG")
     img_b64 = base64.b64encode(buffered.getvalue()).decode()
 
     return predicted_class, confidence, img_b64
+
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():
